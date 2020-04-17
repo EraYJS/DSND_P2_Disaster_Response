@@ -1,5 +1,5 @@
 .idea**
 .vscode**
 **.ipynb
-
+__pycache__**
 

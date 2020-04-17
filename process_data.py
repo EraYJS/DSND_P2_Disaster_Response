@@ -8,11 +8,11 @@ from sqlalchemy import create_engine
 def arg_parser():
     parser = ap.ArgumentParser()
     parser.add_argument("-m", action="store",
-                        default="messages.csv", dest="msg")
+                        default="data/messages.csv", dest="msg")
     parser.add_argument("-c", action="store",
-                        default="categories.csv", dest="cat")
+                        default="data/categories.csv", dest="cat")
     parser.add_argument("-d", action="store",
-                        default="disaster_sn_msg.db", dest="db")
+                        default="data/disaster_sn_msg.db", dest="db")
 
     args = parser.parse_args()
 
