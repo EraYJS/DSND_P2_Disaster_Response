@@ -5,6 +5,7 @@ import pickle
 
 from sklearn.model_selection import train_test_split
 from sqlalchemy import create_engine
+
 from ml_ppl import build_ppl, perf_eval
 
 
@@ -39,8 +40,7 @@ def load_db(path):
 
 
 def model_save(model, path):
-    filename = path
-    pickle.dump(model, open(filename, 'wb'))
+    pickle.dump(model, open(path, 'wb'))
     pass
 
 
@@ -60,9 +60,20 @@ def ml_main():
 
     if args.eval:
         y_pred = pipeline.predict(X_test)
-        slr_mean, lp_mean, f1_score = perf_eval(y_test, y_pred)
+        slr_mean, lp_mean, label_precision_df, f1_score, report = \
+            perf_eval(y_test, y_pred)
 
-        # TODO: plot scores
+        print(f'Custom F1-Score is {f1_score}.')
+        print(f'The mean of each label precision  is {lp_mean}.')
+        print(f'The mean of label recall for each sample is {slr_mean}.')
+
+        print('=======================================')
+        print('Printing custom each label precision...')
+        print(label_precision_df)
+
+        print('=======================================')
+        print('Printing classification report...')
+        print(report)
 
     sv_pth = args.clf_type + "_" + args.md_pth
     print(f'Saving model to {sv_pth}...')

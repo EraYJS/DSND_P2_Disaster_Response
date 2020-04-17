@@ -16,6 +16,8 @@ def arg_parse():
                         default="../data/disaster_sn_msg.db", dest="db_pth")
     parser.add_argument("-m", action="store", required=True,
                         default="../model.pkl", dest="md_pth")
+    parser.add_argument("-p", action="store", required=False,
+                        default=3001, dest="port")
 
     args = parser.parse_args()
 
@@ -138,7 +140,7 @@ def go():
 
 
 def main():
-    app.run(host='0.0.0.0', port=3001, debug=True)
+    app.run(host='0.0.0.0', port=args.port, debug=True)
 
 
 if __name__ == '__main__':
