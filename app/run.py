@@ -3,12 +3,15 @@ import joblib
 import json
 import pandas as pd
 import plotly
+import sys
 
 from flask import Flask
 from flask import render_template, request
 from plotly.graph_objects import Bar
 from sqlalchemy import create_engine
 
+
+sys.path += ['.']
 
 def arg_parse():
     parser = ap.ArgumentParser()
