@@ -17,9 +17,14 @@ def arg_parse():
     parser.add_argument("-m", action="store", required=True,
                         default="model.pkl", dest="md_pth",
                         help='path to save the model')
-    parser.add_argument("-e", action="store", required=False,
-                        default=True, dest="eval",
+    parser.add_argument("-e", action="store_true", required=False,
+                        default=False, dest="eval",
                         help='whether printing evaluation stats')
+    parser.add_argument("-g", action="store_true", required=False,
+                        default=False, dest="gs",
+                        help="whether to perform grid search for the model"
+                             "(grid searches are very computationally "
+                             "expensive)")
     parser.add_argument("-t", action="store", required=False,
                         default="Ada", dest="clf_type",
                         help='classifier type to be built, Ada or XG')
@@ -54,7 +59,7 @@ def ml_main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
 
     print(f'Building {args.clf_type}Boost model...')
-    pipeline = build_ppl(args.clf_type)
+    pipeline = build_ppl(args.clf_type, args.gs)
 
     pipeline.fit(X_train, y_train)
 

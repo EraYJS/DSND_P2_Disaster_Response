@@ -40,6 +40,7 @@ def data_transform(msg, cat):
 
     data = pd.concat([msg, labels], axis=1)
     data.drop_duplicates(inplace=True)
+    data['related'].replace(to_replace=2, value=1, inplace=True)
 
     return data
 

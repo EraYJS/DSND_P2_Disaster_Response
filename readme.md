@@ -80,14 +80,15 @@ ada_ppl = Pipeline([
 ##### To run the ML pipeline
 
 ```shell script
-python train_classifier.py -d data/disaster_sn_msg.db -m model.pkl -e False -t Ada
+python train_classifier.py -d data/disaster_sn_msg.db -m model.pkl  -t Ada
 ```
 
 Options:
 
 - `-d`: the path to save the generate database file.
 - `-m`: the path to save the model.
-- `-e`: opt True to print performance metrics.
+- `-e`: add this option to enable printing performance metrics.
+- `-g`: add this option to use `GridSearchCV` model instead of Pipeline object.
 - `-t`: type of classifier, only `Ada` and `XG` available.
 
  <a name="WebApp"></a>

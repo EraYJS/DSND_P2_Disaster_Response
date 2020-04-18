@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pickle
 import re
 
 from nltk import pos_tag
@@ -12,7 +11,8 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, make_scorer
+from sklearn.model_selection import GridSearchCV
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline, FeatureUnion
 
@@ -55,23 +55,32 @@ class StartingVerbExtractor(BaseEstimator, TransformerMixin):
         return pd.DataFrame(X_tagged)
 
 
-def build_ppl(clf_type):
+def build_ppl(clf_type, gs=False):
     """
-    Grid Search Results:
-        AdaBoost:
-            {'clf__estimator__learning_rate': 1.2,
-             'clf__estimator__n_estimators': 51,
-             'vect__max_df': 0.4}
+    This function construct models of desired classifier.
 
+    NOTE: the 'gs' option is set to False by default, model parameters are
+          'best_param_' acquired from grid search in ML_pipeline_whole.ipynb
 
-        XGBoost:
-            {'clf__estimator__colsample_bytree': 1.0,
-             'clf__estimator__gamma': 5.0,
-             'clf__estimator__learning_rate': 0.5,
-             'clf__estimator__min_child_weight': 1,
-             'clf__estimator__subsample': 1.0,
-             'vect__max_df': 0.75}
+    :param clf_type: 'Ada' or 'XG', desired type of classifier
+    :param gs: True or False, whether to return a GridSearchCV object
+
+    :return: a Pipeline object or a GridSearchCV object of AdaBoost or XGBoost
     """
+    # Grid Search Results:
+    #     AdaBoost:
+    #         {'clf__estimator__learning_rate': 1.2,
+    #          'clf__estimator__n_estimators': 51,
+    #          'vect__max_df': 0.4}
+    #
+    #
+    #     XGBoost:
+    #         {'clf__estimator__colsample_bytree': 1.0,
+    #          'clf__estimator__gamma': 5.0,
+    #          'clf__estimator__learning_rate': 0.5,
+    #          'clf__estimator__min_child_weight': 1,
+    #          'clf__estimator__subsample': 1.0,
+    #          'vect__max_df': 0.75}
 
     if clf_type == "Ada":
 
@@ -91,7 +100,25 @@ def build_ppl(clf_type):
                         ))
                  )])
 
-        return ada_ppl
+        if gs:
+            ada_params = {'feats__text_ppl__vect__max_df': (0.3, 0.4, 0.5),
+                          'clf__estimator__n_estimators' : range(50, 54, 1),
+                          'clf__estimator__learning_rate': np.arange(1.2, 2.0,
+                                                                     0.2)
+                          }
+
+            ada_gs = GridSearchCV(
+                    ada_ppl,
+                    param_grid=ada_params,
+                    scoring=make_scorer(gs_eval),
+                    n_jobs=12,
+                    verbose=7
+            )
+
+            return ada_gs
+
+        else:
+            return ada_ppl
 
     elif clf_type == "XG":
 
@@ -115,18 +142,42 @@ def build_ppl(clf_type):
                         ))
                  )])
 
-        return xgb_ppl
+        if gs:
+            xgb_params = {'feats__text_ppl__vect__max_df'   : (0.3, 0.4, 0.5),
+                          'clf__estimator__max_depth'       : range(5, 10, 2),
+                          'clf__estimator__learning_rate'   : [0.5, 0.75, 1.0],
+                          'clf__estimator__min_child_weight': np.arange(1, 4,
+                                                                        1),
+                          'clf__estimator__gamma'           : np.arange(5, 7.5,
+                                                                        0.5)
+                          }
+
+            # %%
+
+            xgb_gs = GridSearchCV(
+                    xgb_ppl,
+                    param_grid=xgb_params,
+                    scoring=make_scorer(gs_eval),
+                    n_jobs=12,
+                    verbose=7
+            )
+        else:
+            return xgb_ppl
 
 
 def perf_eval(y_test_df, y_pred_np):
     """
     This is a customized evaluation function that measures both the label recall
     for each sample and the precision of each label across all samples.
-    :param y_test_df: ground truth
-    :param y_pred_np: predictions
-    :return: sample_label_recall: the label recall for each sample
-             label_precision: the precision of each label across all samples
+    :param y_test_df: pd.DataFrame, ground truth
+    :param y_pred_np: np.array, predictions
+
+    :return: slr_mean: mean of label recall for each sample
+             lp_mean : mean of each label precision
+             label_precision_df: pd.DataFrame, the precision of each label
+             across all samples
              f1_score: the f1 score calculated from the mean of the above two
+             report : pd.DataFrame, a scikit-learn classification report
     """
     y_test_np = np.array(y_test_df)
     sample_label_recall = []
@@ -179,9 +230,10 @@ def perf_eval(y_test_df, y_pred_np):
 def gs_eval(y_test_df, y_pred_np):
     """
     This function returns f1-score for grid search purpose.
-    :param y_test: ground truth
-    :param y_pred: predictions
-    :return: f1-score
+    :param y_test: pd.DataFrame, ground truth
+    :param y_pred: np.array, predictions
+
+    :return: custom f1-score
     """
     y_test_np = np.array(y_test_df)
     sample_label_recall = []
